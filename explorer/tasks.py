@@ -14,14 +14,14 @@ from .models import *
 
 HEIGHT_STEP = 43800
 DAILY_BLOCK_STEP = 1440
-BEAM_NODE_API = 'http://localhost:8888'
+GRIMM_NODE_API = 'http://localhost:8888'
 
 @periodic_task(run_every=(crontab(minute='*/1')), name="update_blockchain", ignore_result=True)
 def update_blockchain():
 
     # # Find last seen height
     _redis = redis.Redis(host='localhost', port=6379, db=0)
-    last_height = _redis.get('beam_blockex_last_height')
+    last_height = _redis.get('grimm_blockex_last_height')
 
     if not last_height:
         try:
@@ -33,7 +33,7 @@ def update_blockchain():
     last_height = int(last_height)
 
     # Get last blockchain height
-    r = requests.get(BEAM_NODE_API + '/status')
+    r = requests.get(GRIMM_NODE_API + '/status')
 
     current_height = int(r.json()['height'])
 
@@ -80,7 +80,7 @@ def update_blockchain():
     # Retrieve missing blocks in 100 block pages
 
     while (last_height < current_height + 100):
-        r = requests.get(BEAM_NODE_API + '/blocks?height=' + str(last_height) + '&n=100')
+        r = requests.get(GRIMM_NODE_API + '/blocks?height=' + str(last_height) + '&n=100')
         blocks = r.json()
         _inputs = []
         _outputs = []
@@ -135,7 +135,7 @@ def update_blockchain():
         if len(_kernels) > 0:
             Kernel.objects.bulk_create(_kernels)
 
-    _redis.set('beam_blockex_last_height', current_height)
+    _redis.set('grimm_blockex_last_height', current_height)
     _redis.delete('block_data')
     _redis.delete('coins_in_circulation_mined')
     _redis.delete('total_coins_in_circulation')
